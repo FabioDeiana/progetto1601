@@ -10,6 +10,9 @@ public abstract class Gioco {
         this.id = id;
         this.titolo = titolo;
         this.annoPubblicazione = annoPubblicazione;
+        if (prezzo <= 0) {
+            throw new IllegalArgumentException("Il prezzo deve essere maggiore di 0!");
+        }
         this.prezzo = prezzo;
     }
 
@@ -38,6 +41,9 @@ public abstract class Gioco {
     }
 
     public void setPrezzo(double prezzo) {
+        if (prezzo <= 0) {
+            throw new IllegalArgumentException("Il prezzo deve essere maggiore di 0!");
+        }
         this.prezzo = prezzo;
     }
 

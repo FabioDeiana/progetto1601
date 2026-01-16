@@ -7,10 +7,7 @@ import fabio.exceptions.GiocoGiaEsistenteException;
 import fabio.exceptions.GiocoNonTrovatoException;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class Collezione {
     private List<Gioco> giochi;
@@ -19,58 +16,62 @@ public class Collezione {
         this.giochi = new ArrayList<>();
     }
 
-    // Aggiunta di un elemento
+    // Aggiunta elemento
     public void aggiungiGioco(Gioco gioco) throws GiocoGiaEsistenteException {
-        // Controllo se esiste già un gioco con lo stesso ID
-        boolean esiste = giochi.stream().anyMatch(g -> g.getId().equals(gioco.getId()));
-
-        if (esiste) {
-            throw new GiocoGiaEsistenteException(gioco.getId());
+        // Controllo se ID già esiste
+        for (Gioco g : giochi) {
+            if (g.getId().equals(gioco.getId())) {
+                throw new GiocoGiaEsistenteException(gioco.getId());
+            }
         }
-
         giochi.add(gioco);
-        System.out.println("Gioco aggiunto con successo!");
+        System.out.println("Gioco aggiunto!");
     }
 
     // Ricerca per ID
     public Gioco ricercaPerId(String id) throws GiocoNonTrovatoException {
-        Optional<Gioco> giocoTrovato = giochi.stream()
-                .filter(gioco -> gioco.getId().equals(id))
-                .findFirst();
-
-        if (giocoTrovato.isPresent()) {
-            return giocoTrovato.get();
-        } else {
-            throw new GiocoNonTrovatoException(id);
+        for (Gioco gioco : giochi) {
+            if (gioco.getId().equals(id)) {
+                return gioco;
+            }
         }
+        throw new GiocoNonTrovatoException(id);
     }
 
-    // Ricerca per prezzo - ritorna lista di giochi con prezzo inferiore
+    // Ricerca per prezzo
     public List<Gioco> ricercaPerPrezzo(double prezzoMassimo) {
-        return giochi.stream()
-                .filter(gioco -> gioco.getPrezzo() < prezzoMassimo)
-                .collect(Collectors.toList());
+        List<Gioco> risultati = new ArrayList<>();
+        for (Gioco gioco : giochi) {
+            if (gioco.getPrezzo() < prezzoMassimo) {
+                risultati.add(gioco);
+            }
+        }
+        return risultati;
     }
 
-    // Ricerca per numero di giocatori (solo per giochi da tavolo)
+    // Ricerca per numero giocatori
     public List<GiocoDaTavolo> ricercaPerNumeroGiocatori(int numeroGiocatori) {
-        return giochi.stream()
-                .filter(gioco -> gioco instanceof GiocoDaTavolo)
-                .map(gioco -> (GiocoDaTavolo) gioco)
-                .filter(giocoTavolo -> giocoTavolo.getNumeroGiocatori() == numeroGiocatori)
-                .collect(Collectors.toList());
+        List<GiocoDaTavolo> risultati = new ArrayList<>();
+        for (Gioco gioco : giochi) {
+            if (gioco instanceof GiocoDaTavolo) {
+                GiocoDaTavolo giocoTavolo = (GiocoDaTavolo) gioco;
+                if (giocoTavolo.getNumeroGiocatori() == numeroGiocatori) {
+                    risultati.add(giocoTavolo);
+                }
+            }
+        }
+        return risultati;
     }
 
-    // Rimozione di un elemento dato un codice ID
+    // Rimozione elemento
     public void rimuoviGioco(String id) throws GiocoNonTrovatoException {
         Gioco giocoDaRimuovere = ricercaPerId(id);
         giochi.remove(giocoDaRimuovere);
-        System.out.println("Gioco rimosso con successo!");
+        System.out.println("Gioco rimosso!");
     }
 
-    // Aggiornamento di un elemento esistente dato l'ID
+    // Aggiornamento elemento
     public void aggiornaGioco(String id, Gioco giocoAggiornato) throws GiocoNonTrovatoException {
-        // Trovo l'indice del gioco da aggiornare
         int index = -1;
         for (int i = 0; i < giochi.size(); i++) {
             if (giochi.get(i).getId().equals(id)) {
@@ -84,51 +85,56 @@ public class Collezione {
         }
 
         giochi.set(index, giocoAggiornato);
-        System.out.println("Gioco aggiornato con successo!");
+        System.out.println("Gioco aggiornato!");
     }
 
-    // Statistiche della collezione
+    // Statistiche
     public void stampaStatistiche() {
-        System.out.println("\n===== STATISTICHE COLLEZIONE =====");
+        System.out.println("\n--- STATISTICHE COLLEZIONE ---");
 
-        // Numero totale di videogiochi
-        long numeroVideogiochi = giochi.stream()
-                .filter(gioco -> gioco instanceof Videogioco)
-                .count();
-        System.out.println("Numero totale di videogiochi: " + numeroVideogiochi);
+        int numVideogiochi = 0;
+        int numGiochiTavolo = 0;
+        double prezzoMassimo = 0;
+        String titoloMassimo = "";
+        double somma = 0;
 
-        // Numero totale di giochi da tavolo
-        long numeroGiochiTavolo = giochi.stream()
-                .filter(gioco -> gioco instanceof GiocoDaTavolo)
-                .count();
-        System.out.println("Numero totale di giochi da tavolo: " + numeroGiochiTavolo);
+        for (Gioco gioco : giochi) {
+            if (gioco instanceof Videogioco) {
+                numVideogiochi++;
+            } else if (gioco instanceof GiocoDaTavolo) {
+                numGiochiTavolo++;
+            }
 
-        // Gioco con il prezzo più alto
-        Optional<Gioco> giocoPiuCostoso = giochi.stream()
-                .max(Comparator.comparing(Gioco::getPrezzo));
+            if (gioco.getPrezzo() > prezzoMassimo) {
+                prezzoMassimo = gioco.getPrezzo();
+                titoloMassimo = gioco.getTitolo();
+            }
 
-        if (giocoPiuCostoso.isPresent()) {
-            System.out.println("Gioco più costoso: " + giocoPiuCostoso.get().getTitolo() + " - €" + giocoPiuCostoso.get().getPrezzo());
+            somma += gioco.getPrezzo();
         }
 
-        // Media dei prezzi
-        double mediaPrezzi = giochi.stream()
-                .mapToDouble(Gioco::getPrezzo)
-                .average()
-                .orElse(0.0);
-        System.out.println("Media dei prezzi: €" + String.format("%.2f", mediaPrezzi));
+        System.out.println("Videogiochi: " + numVideogiochi);
+        System.out.println("Giochi da tavolo: " + numGiochiTavolo);
+        System.out.println("Gioco più costoso: " + titoloMassimo + " - €" + prezzoMassimo);
 
-        System.out.println("===================================\n");
+        if (giochi.size() > 0) {
+            double media = somma / giochi.size();
+            System.out.println("Prezzo medio: €" + media);
+        }
+
+        System.out.println("------------------------------\n");
     }
 
-    // Stampa tutti i giochi
+    // Stampa tutti
     public void stampaTuttiGiochi() {
         if (giochi.isEmpty()) {
-            System.out.println("La collezione è vuota!");
+            System.out.println("Collezione vuota!");
         } else {
-            System.out.println("\n===== COLLEZIONE GIOCHI =====");
-            giochi.forEach(gioco -> System.out.println(gioco));
-            System.out.println("=============================\n");
+            System.out.println("\n--- LISTA GIOCHI ---");
+            for (Gioco gioco : giochi) {
+                System.out.println(gioco);
+            }
+            System.out.println("--------------------\n");
         }
     }
 }
